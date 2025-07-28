@@ -98,6 +98,43 @@ npm run dev
      createdAt: [timestamp atual]
      ```
 
+## 🚀 Deploy no Vercel
+
+### 1. Acesse o Vercel
+- Vá para [vercel.com](https://vercel.com)
+- Faça login com sua conta GitHub
+
+### 2. Importar Projeto
+- Clique em "New Project"
+- Selecione o repositório `Taiuara/crmp`
+- Clique em "Import"
+
+### 3. Configurar Deploy
+- Framework: Next.js (detectado automaticamente)
+- Build Command: `npm run build`
+- Output Directory: `.next`
+- Install Command: `npm install`
+
+### 4. Configurar Variáveis de Ambiente
+Adicione as seguintes variáveis no Vercel:
+```
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyBafwXpCK_B2fbvk7s_KbvdHGSzmRkkZZg
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=crm-pingdesk.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=crm-pingdesk
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=crm-pingdesk.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=488978258940
+NEXT_PUBLIC_FIREBASE_APP_ID=1:488978258940:web:e24b5e6c8a5c8f8e8c5e6c
+```
+
+### 5. Deploy
+- Clique em "Deploy"
+- Aguarde o build ser concluído
+- Sua aplicação estará disponível em uma URL do Vercel
+
+### 6. Configurar Domínio Personalizado (Opcional)
+- No dashboard do Vercel, vá em "Settings" > "Domains"
+- Adicione seu domínio personalizado
+
 3. **Faça login**:
    - Use o email e senha criados para fazer login no sistema
 

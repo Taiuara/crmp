@@ -1,0 +1,14 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "env": {
+    "NEXT_PUBLIC_FIREBASE_API_KEY": "AIzaSyBafwXpCK_B2fbvk7s_KbvdHGSzmRkkZZg",
+    "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN": "crm-pingdesk.firebaseapp.com",
+    "NEXT_PUBLIC_FIREBASE_PROJECT_ID": "crm-pingdesk",
+    "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET": "crm-pingdesk.firebasestorage.app",
+    "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "488978258940",
+    "NEXT_PUBLIC_FIREBASE_APP_ID": "1:488978258940:web:e24b5e6c8a5c8f8e8c5e6c"
+  }
+}
