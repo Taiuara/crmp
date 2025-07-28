@@ -23,25 +23,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        // Buscar dados do usuário no Firestore
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUser({
-            id: firebaseUser.uid,
-            email: firebaseUser.email!,
-            name: userData.name,
-            role: userData.role,
-            createdAt: userData.createdAt?.toDate() || new Date(),
-          });
+      try {
+        if (firebaseUser) {
+          // Buscar dados do usuário no Firestore
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUser({
+              id: firebaseUser.uid,
+              email: firebaseUser.email!,
+              name: userData.name,
+              role: userData.role,
+              createdAt: userData.createdAt?.toDate() || new Date(),
+            });
+          } else {
+            console.error('Usuário não encontrado no Firestore:', firebaseUser.uid);
+            setUser(null);
+          }
+          setFirebaseUser(firebaseUser);
+        } else {
+          setUser(null);
+          setFirebaseUser(null);
         }
-        setFirebaseUser(firebaseUser);
-      } else {
+      } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
         setUser(null);
         setFirebaseUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
