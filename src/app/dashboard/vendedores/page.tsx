@@ -24,7 +24,7 @@ export default function VendedoresPage() {
     name: '',
     email: '',
     password: '',
-    role: 'seller' as const,
+    role: 'seller' as 'admin' | 'seller',
   });
 
   useEffect(() => {

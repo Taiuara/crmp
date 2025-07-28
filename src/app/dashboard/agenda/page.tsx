@@ -8,7 +8,7 @@ import { Meeting, Proposal } from '@/types';
 import DashboardLayout from '@/components/DashboardLayout';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
-import '../calendar.css';
+import '../../calendar.css';
 import { format, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Plus, Clock, MapPin, Phone, Mail, Video } from 'lucide-react';
