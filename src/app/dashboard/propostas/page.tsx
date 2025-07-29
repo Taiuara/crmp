@@ -31,20 +31,25 @@ export default function PropostasPage() {
       if (user.role === 'admin') {
         proposalsQuery = query(collection(db, 'proposals'), orderBy('createdAt', 'desc'));
       } else {
+        // Removendo orderBy para evitar necessidade de índice composto
         proposalsQuery = query(
           collection(db, 'proposals'),
-          where('sellerId', '==', user.id),
-          orderBy('createdAt', 'desc')
+          where('sellerId', '==', user.id)
         );
       }
 
       const snapshot = await getDocs(proposalsQuery);
-      const proposalsData = snapshot.docs.map(doc => ({
+      let proposalsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate() || new Date(),
         updatedAt: doc.data().updatedAt?.toDate() || new Date(),
       })) as Proposal[];
+
+      // Ordenar no cliente se for vendedor
+      if (user.role !== 'admin') {
+        proposalsData = proposalsData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      }
 
       setProposals(proposalsData);
     } catch (error) {

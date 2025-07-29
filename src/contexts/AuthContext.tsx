@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { User } from '@/types';
 
@@ -25,12 +25,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
-          // Buscar dados do usuário no Firestore
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          console.log('Firebase user UID:', firebaseUser.uid);
+          
+          // Primeiro tenta buscar usando o UID como ID do documento
+          let userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          let userData = null;
+          let docId = firebaseUser.uid;
+
           if (userDoc.exists()) {
-            const userData = userDoc.data();
+            console.log('Usuário encontrado com UID como ID do documento');
+            userData = userDoc.data();
+          } else {
+            console.log('Usuário não encontrado com UID como ID, buscando por campo UID...');
+            // Se não encontrar, busca por UID dentro dos documentos
+            const usersQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
+            const snapshot = await getDocs(usersQuery);
+            
+            if (!snapshot.empty) {
+              console.log('Usuário encontrado por campo UID');
+              const userDocData = snapshot.docs[0];
+              userData = userDocData.data();
+              docId = userDocData.id;
+            } else {
+              console.log('Usuário não encontrado em nenhuma estrutura');
+            }
+          }
+
+          if (userData) {
+            console.log('Dados do usuário carregados:', userData);
             setUser({
-              id: firebaseUser.uid,
+              id: docId,
               email: firebaseUser.email!,
               name: userData.name,
               role: userData.role,
@@ -42,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           setFirebaseUser(firebaseUser);
         } else {
+          console.log('Nenhum usuário logado');
           setUser(null);
           setFirebaseUser(null);
         }

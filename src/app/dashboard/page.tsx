@@ -28,24 +28,34 @@ export default function DashboardPage() {
     if (!user) return;
 
     try {
+      console.log('Carregando dados para usuário:', user);
+      
       let proposalsQuery;
       if (user.role === 'admin') {
         proposalsQuery = query(collection(db, 'proposals'), orderBy('createdAt', 'desc'));
       } else {
+        // Removendo orderBy para evitar necessidade de índice composto
         proposalsQuery = query(
           collection(db, 'proposals'),
-          where('sellerId', '==', user.id),
-          orderBy('createdAt', 'desc')
+          where('sellerId', '==', user.id)
         );
       }
 
+      console.log('Executando query de propostas...');
       const proposalsSnapshot = await getDocs(proposalsQuery);
-      const proposalsData = proposalsSnapshot.docs.map(doc => ({
+      console.log('Propostas carregadas:', proposalsSnapshot.docs.length);
+      
+      let proposalsData = proposalsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate() || new Date(),
         updatedAt: doc.data().updatedAt?.toDate() || new Date(),
       })) as Proposal[];
+
+      // Ordenar no cliente se for vendedor
+      if (user.role !== 'admin') {
+        proposalsData = proposalsData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      }
 
       setProposals(proposalsData);
 
@@ -54,22 +64,31 @@ export default function DashboardPage() {
       if (user.role === 'admin') {
         meetingsQuery = query(collection(db, 'meetings'), orderBy('date', 'asc'));
       } else {
+        // Removendo orderBy para evitar necessidade de índice composto
         meetingsQuery = query(
           collection(db, 'meetings'),
-          where('sellerId', '==', user.id),
-          orderBy('date', 'asc')
+          where('sellerId', '==', user.id)
         );
       }
 
+      console.log('Executando query de reuniões...');
       const meetingsSnapshot = await getDocs(meetingsQuery);
-      const meetingsData = meetingsSnapshot.docs.map(doc => ({
+      console.log('Reuniões carregadas:', meetingsSnapshot.docs.length);
+      
+      let meetingsData = meetingsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         date: doc.data().date?.toDate() || new Date(),
         createdAt: doc.data().createdAt?.toDate() || new Date(),
       })) as Meeting[];
 
+      // Ordenar no cliente se for vendedor
+      if (user.role !== 'admin') {
+        meetingsData = meetingsData.sort((a, b) => a.date.getTime() - b.date.getTime());
+      }
+
       setMeetings(meetingsData);
+      console.log('Dados carregados com sucesso');
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados do dashboard');

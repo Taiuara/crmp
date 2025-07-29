@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
-import { collection, query, getDocs, addDoc, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, getDocs, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, deleteUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { User } from '@/types';
@@ -70,8 +70,8 @@ export default function VendedoresPage() {
         // Criar novo vendedor
         const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         
-        // Salvar dados do usuário no Firestore
-        await addDoc(collection(db, 'users'), {
+        // Salvar dados do usuário no Firestore usando o UID como ID do documento
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
           uid: userCredential.user.uid,
           name: formData.name,
           email: formData.email,

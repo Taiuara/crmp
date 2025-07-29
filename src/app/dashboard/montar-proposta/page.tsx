@@ -4,6 +4,7 @@ import { useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Download, FileText, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
+import jsPDF from 'jspdf';
 
 interface ProposalTemplate {
   id: string;
@@ -142,7 +143,7 @@ export default function MontarPropostaPage() {
     validUntil: '',
   });
 
-  const generateProposal = () => {
+  const generateProposal = async () => {
     if (!selectedTemplate) {
       toast.error('Selecione um plano primeiro');
       return;
@@ -153,69 +154,239 @@ export default function MontarPropostaPage() {
       return;
     }
 
-    const finalPrice = selectedTemplate.basePrice * (1 - customizations.discount / 100);
-    
-    const proposalContent = `PROPOSTA COMERCIAL - ${selectedTemplate.name}
+    try {
+      const pdf = new jsPDF();
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      // Configurações de cores
+      const primaryColor: [number, number, number] = [31, 182, 255]; // #1FB6FF
+      const secondaryColor: [number, number, number] = [107, 70, 242]; // #6B46F2
+      const darkGray: [number, number, number] = [64, 64, 64];
+      const lightGray: [number, number, number] = [128, 128, 128];
 
-DADOS DO CLIENTE:
-Empresa: ${clientData.companyName}
-Contato: ${clientData.contactName}
-E-mail: ${clientData.email}
-Telefone: ${clientData.phone}
-Endereço: ${clientData.address}
+      // Header com logo (simulado)
+      pdf.setFillColor(...primaryColor);
+      pdf.rect(0, 0, pageWidth, 25, 'F');
+      
+      // Logo e título
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('PingDesk', 20, 17);
 
-PLANO SELECIONADO:
-${selectedTemplate.icon} ${selectedTemplate.name}
-${selectedTemplate.description}
+      // Data
+      pdf.setTextColor(...darkGray);
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth - 60, 35);
 
-CARACTERÍSTICAS DO PLANO:
-${selectedTemplate.features.map(feature => `• ${feature}`).join('\n')}
+      // Título da proposta
+      pdf.setTextColor(...primaryColor);
+      pdf.setFontSize(24);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('PROPOSTA COMERCIAL', 20, 50);
 
-${selectedTemplate.franchise ? `FRANQUIA INCLUÍDA: ${selectedTemplate.franchise}` : ''}
+      // Subtítulo com plano selecionado
+      pdf.setTextColor(...secondaryColor);
+      pdf.setFontSize(16);
+      pdf.text(selectedTemplate.name, 20, 65);
 
-${selectedTemplate.additionalValues ? `
-VALORES ADICIONAIS:
-• Nível 1: R$ ${selectedTemplate.additionalValues.nivel1.toFixed(2)}
-• Nível 2: R$ ${selectedTemplate.additionalValues.nivel2.toFixed(2)}
-• Massivos: R$ ${selectedTemplate.additionalValues.massivos.toFixed(2)}
-• Vendas Receptivas: ${selectedTemplate.additionalValues.vendasReceptivas}
-` : ''}
+      let yPosition = 80;
 
-${selectedTemplate.perCall ? `
-VALORES POR CHAMADO:
-• Nível 1: R$ ${selectedTemplate.perCall.nivel1.toFixed(2)}
-• Nível 2: R$ ${selectedTemplate.perCall.nivel2.toFixed(2)}
-• Massivos: R$ ${selectedTemplate.perCall.massivos.toFixed(2)}
-• Vendas Receptivas: ${selectedTemplate.perCall.vendasReceptivas}
-` : ''}
+      // Seção dados do cliente
+      pdf.setTextColor(...darkGray);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('DADOS DO CLIENTE', 20, yPosition);
+      
+      yPosition += 10;
+      pdf.setDrawColor(...lightGray);
+      pdf.line(20, yPosition, pageWidth - 20, yPosition);
+      yPosition += 15;
 
-${customizations.additionalFeatures ? `RECURSOS ADICIONAIS:\n${customizations.additionalFeatures}` : ''}
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Empresa: ${clientData.companyName}`, 20, yPosition);
+      yPosition += 8;
+      pdf.text(`Contato: ${clientData.contactName}`, 20, yPosition);
+      yPosition += 8;
+      if (clientData.email) {
+        pdf.text(`E-mail: ${clientData.email}`, 20, yPosition);
+        yPosition += 8;
+      }
+      if (clientData.phone) {
+        pdf.text(`Telefone: ${clientData.phone}`, 20, yPosition);
+        yPosition += 8;
+      }
+      if (clientData.address) {
+        const addressLines = pdf.splitTextToSize(`Endereço: ${clientData.address}`, pageWidth - 40);
+        pdf.text(addressLines, 20, yPosition);
+        yPosition += addressLines.length * 6;
+      }
 
-INVESTIMENTO:
-${selectedTemplate.basePrice > 0 ? `Valor mensal: R$ ${selectedTemplate.basePrice.toLocaleString('pt-BR')}` : 'Sem mensalidade fixa'}
-${customizations.discount > 0 ? `Desconto: ${customizations.discount}%` : ''}
-${selectedTemplate.basePrice > 0 ? `Valor final: R$ ${finalPrice.toLocaleString('pt-BR')}/mês` : ''}
+      yPosition += 10;
 
-${customizations.observations ? `OBSERVAÇÕES:\n${customizations.observations}` : ''}
+      // Características do plano - agora como primeira seção após dados do cliente
+      pdf.setTextColor(...darkGray);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('CARACTERÍSTICAS', 20, yPosition);
+      
+      yPosition += 10;
+      pdf.line(20, yPosition, pageWidth - 20, yPosition);
+      yPosition += 15;
 
-${customizations.validUntil ? `Proposta válida até: ${customizations.validUntil}` : ''}
+      // Nome do plano como subtítulo
+      pdf.setTextColor(...secondaryColor);
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(selectedTemplate.name, 20, yPosition);
+      yPosition += 10;
 
----
-Proposta gerada pelo CRM PingDesk
-Data: ${new Date().toLocaleDateString('pt-BR')}`;
+      pdf.setTextColor(...darkGray);
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      const descriptionLines = pdf.splitTextToSize(selectedTemplate.description, pageWidth - 40);
+      pdf.text(descriptionLines, 20, yPosition);
+      yPosition += descriptionLines.length * 6 + 8;
 
-    const blob = new Blob([proposalContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = `Proposta_${clientData.companyName}_${selectedTemplate.name.replace(/\s+/g, '_')}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+      selectedTemplate.features.forEach(feature => {
+        pdf.text(`• ${feature}`, 25, yPosition);
+        yPosition += 8;
+      });
 
-    toast.success('Proposta gerada e baixada com sucesso!');
+      yPosition += 5;
+
+      // Franquia
+      if (selectedTemplate.franchise) {
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`FRANQUIA INCLUÍDA: ${selectedTemplate.franchise}`, 20, yPosition);
+        yPosition += 15;
+      }
+
+      // Valores adicionais
+      if (selectedTemplate.additionalValues || selectedTemplate.perCall) {
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('VALORES:', 20, yPosition);
+        yPosition += 10;
+
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+
+        if (selectedTemplate.additionalValues) {
+          pdf.text(`• Nível 1: R$ ${selectedTemplate.additionalValues.nivel1.toFixed(2)}`, 25, yPosition);
+          yPosition += 8;
+          pdf.text(`• Nível 2: R$ ${selectedTemplate.additionalValues.nivel2.toFixed(2)}`, 25, yPosition);
+          yPosition += 8;
+          pdf.text(`• Massivos: R$ ${selectedTemplate.additionalValues.massivos.toFixed(2)}`, 25, yPosition);
+          yPosition += 8;
+          pdf.text(`• Vendas Receptivas: ${selectedTemplate.additionalValues.vendasReceptivas}`, 25, yPosition);
+          yPosition += 12;
+        }
+
+        if (selectedTemplate.perCall) {
+          pdf.text('VALORES POR CHAMADO:', 25, yPosition);
+          yPosition += 8;
+          pdf.text(`• Nível 1: R$ ${selectedTemplate.perCall.nivel1.toFixed(2)}`, 30, yPosition);
+          yPosition += 8;
+          pdf.text(`• Nível 2: R$ ${selectedTemplate.perCall.nivel2.toFixed(2)}`, 30, yPosition);
+          yPosition += 8;
+          pdf.text(`• Massivos: R$ ${selectedTemplate.perCall.massivos.toFixed(2)}`, 30, yPosition);
+          yPosition += 8;
+          pdf.text(`• Vendas Receptivas: ${selectedTemplate.perCall.vendasReceptivas}`, 30, yPosition);
+          yPosition += 12;
+        }
+      }
+
+      // Recursos adicionais
+      if (customizations.additionalFeatures) {
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('RECURSOS ADICIONAIS:', 20, yPosition);
+        yPosition += 10;
+
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        const additionalLines = pdf.splitTextToSize(customizations.additionalFeatures, pageWidth - 40);
+        pdf.text(additionalLines, 20, yPosition);
+        yPosition += additionalLines.length * 6 + 10;
+      }
+
+      // Seção de investimento
+      pdf.setFillColor(245, 245, 245);
+      pdf.rect(15, yPosition - 5, pageWidth - 30, 35, 'F');
+      
+      pdf.setTextColor(...primaryColor);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('INVESTIMENTO', 20, yPosition + 8);
+
+      yPosition += 20;
+      pdf.setTextColor(...darkGray);
+      pdf.setFontSize(12);
+
+      if (selectedTemplate.basePrice > 0) {
+        const finalPrice = selectedTemplate.basePrice * (1 - customizations.discount / 100);
+        pdf.text(`Valor mensal: R$ ${selectedTemplate.basePrice.toLocaleString('pt-BR')}`, 20, yPosition);
+        yPosition += 8;
+        
+        if (customizations.discount > 0) {
+          pdf.text(`Desconto: ${customizations.discount}%`, 20, yPosition);
+          yPosition += 8;
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`Valor final: R$ ${finalPrice.toLocaleString('pt-BR')}/mês`, 20, yPosition);
+        }
+      } else {
+        pdf.text('Sem mensalidade fixa - Pagamento por chamado', 20, yPosition);
+      }
+
+      yPosition += 20;
+
+      // Observações
+      if (customizations.observations) {
+        pdf.setTextColor(...darkGray);
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('OBSERVAÇÕES:', 20, yPosition);
+        yPosition += 10;
+
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        const observationLines = pdf.splitTextToSize(customizations.observations, pageWidth - 40);
+        pdf.text(observationLines, 20, yPosition);
+        yPosition += observationLines.length * 6 + 10;
+      }
+
+      // Validade
+      if (customizations.validUntil) {
+        pdf.setTextColor(...lightGray);
+        pdf.setFontSize(10);
+        pdf.text(`Proposta válida até: ${new Date(customizations.validUntil).toLocaleDateString('pt-BR')}`, 20, yPosition);
+        yPosition += 10;
+      }
+
+      // Footer
+      pdf.setFillColor(...primaryColor);
+      pdf.rect(0, pageHeight - 20, pageWidth, 20, 'F');
+      
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Proposta gerada pelo CRM PingDesk', 20, pageHeight - 8);
+      pdf.text('www.pingdesk.com.br', pageWidth - 60, pageHeight - 8);
+
+      // Salvar o PDF
+      const fileName = `Proposta_${clientData.companyName}_${selectedTemplate.name.replace(/\s+/g, '_')}.pdf`;
+      pdf.save(fileName);
+
+      toast.success('Proposta PDF gerada e baixada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast.error('Erro ao gerar proposta PDF');
+    }
   };
 
   return (
@@ -461,7 +632,7 @@ Data: ${new Date().toLocaleDateString('pt-BR')}`;
                     className="btn-primary w-full flex items-center justify-center space-x-2"
                   >
                     <Download className="h-4 w-4" />
-                    <span>Gerar e Baixar Proposta</span>
+                    <span>Gerar Proposta PDF</span>
                   </button>
                 </div>
               ) : (
