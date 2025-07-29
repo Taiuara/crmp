@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Meeting, Proposal } from '@/types';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -11,7 +11,7 @@ import 'react-calendar/dist/Calendar.css';
 import '../../calendar.css';
 import { format, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, Clock, MapPin, Phone, Mail, Video } from 'lucide-react';
+import { Plus, Clock, MapPin, Phone, Mail, Video, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AgendaPage() {
@@ -148,6 +148,28 @@ export default function AgendaPage() {
     }
   };
 
+  const handleDeleteMeeting = async (meetingId: string, meetingProvider: string, meetingSellerId: string) => {
+    // Verificar permissões: apenas o vendedor dono da reunião ou admin pode excluir
+    if (user?.role !== 'admin' && user?.id !== meetingSellerId) {
+      toast.error('Você não tem permissão para excluir esta reunião');
+      return;
+    }
+
+    // Confirmar exclusão
+    if (!confirm(`Tem certeza que deseja excluir a reunião com ${meetingProvider}?`)) {
+      return;
+    }
+
+    try {
+      await deleteDoc(doc(db, 'meetings', meetingId));
+      toast.success('Reunião excluída com sucesso!');
+      loadData(); // Recarregar os dados
+    } catch (error) {
+      console.error('Erro ao excluir reunião:', error);
+      toast.error('Erro ao excluir reunião');
+    }
+  };
+
   const handleProposalSelect = (proposalId: string) => {
     const proposal = proposals.find(p => p.id === proposalId);
     setFormData(prev => ({
@@ -261,6 +283,15 @@ export default function AgendaPage() {
                         {meeting.notes && (
                           <p className="text-sm text-gray-500 mt-2">{meeting.notes}</p>
                         )}
+                      </div>
+                      <div className="ml-4">
+                        <button
+                          onClick={() => handleDeleteMeeting(meeting.id, meeting.provider, meeting.sellerId)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Excluir reunião"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
                   </div>
