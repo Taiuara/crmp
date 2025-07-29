@@ -32,6 +32,28 @@ interface ProposalTemplate {
 
 const templates: ProposalTemplate[] = [
   {
+    id: 'plano-personalizado',
+    name: 'Plano Personalizado',
+    description: 'Configure um plano personalizado de acordo com as necessidades específicas do cliente',
+    features: [
+      'Plano totalmente customizável',
+      'Franquia personalizada',
+      'Valores configuráveis',
+      'Atendimento sob medida'
+    ],
+    basePrice: 0,
+    priceLabel: 'Personalizado',
+    category: 'atendimento',
+    icon: '⚙️',
+    franchise: 'A definir',
+    additionalValues: {
+      nivel1: 0,
+      nivel2: 0,
+      massivos: 0,
+      vendasReceptivas: 'A definir'
+    }
+  },
+  {
     id: 'atendimento-24h',
     name: 'Atendimento 24h / 7 dias',
     description: 'Atendimento completo 24 horas por dia, 7 dias por semana',
@@ -142,6 +164,14 @@ export default function MontarPropostaPage() {
     observations: '',
     validUntil: '',
   });
+  const [customPlan, setCustomPlan] = useState({
+    monthlyValue: 0,
+    franchise: '',
+    nivel1: 0,
+    nivel2: 0,
+    massivos: 0,
+    vendasReceptivas: '',
+  });
 
   const generateProposal = async () => {
     if (!selectedTemplate) {
@@ -154,10 +184,31 @@ export default function MontarPropostaPage() {
       return;
     }
 
+    // Validações específicas para plano personalizado
+    if (selectedTemplate.id === 'plano-personalizado') {
+      if (!customPlan.monthlyValue || !customPlan.franchise) {
+        toast.error('Preencha todos os campos obrigatórios do plano personalizado');
+        return;
+      }
+    }
+
     try {
       const pdf = new jsPDF();
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      // Usar dados do plano personalizado se selecionado
+      const planData = selectedTemplate.id === 'plano-personalizado' ? {
+        ...selectedTemplate,
+        basePrice: customPlan.monthlyValue,
+        franchise: customPlan.franchise,
+        additionalValues: {
+          nivel1: customPlan.nivel1,
+          nivel2: customPlan.nivel2,
+          massivos: customPlan.massivos,
+          vendasReceptivas: customPlan.vendasReceptivas
+        }
+      } : selectedTemplate;
       
       // Configurações de cores
       const primaryColor: [number, number, number] = [31, 182, 255]; // #1FB6FF
@@ -190,7 +241,7 @@ export default function MontarPropostaPage() {
       // Subtítulo com plano selecionado
       pdf.setTextColor(...secondaryColor);
       pdf.setFontSize(14);
-      pdf.text(selectedTemplate.name, 20, 58);
+      pdf.text(planData.name, 20, 58);
 
       let yPosition = 70;
 
@@ -241,33 +292,49 @@ export default function MontarPropostaPage() {
       pdf.setTextColor(...secondaryColor);
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'bold');
-      pdf.text(selectedTemplate.name, 20, yPosition);
+      pdf.text(planData.name, 20, yPosition);
       yPosition += 8;
 
       pdf.setTextColor(...darkGray);
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
-      const descriptionLines = pdf.splitTextToSize(selectedTemplate.description, pageWidth - 40);
+      const descriptionLines = pdf.splitTextToSize(planData.description, pageWidth - 40);
       pdf.text(descriptionLines, 20, yPosition);
       yPosition += descriptionLines.length * 5 + 6;
 
-      selectedTemplate.features.forEach(feature => {
-        pdf.text(`• ${feature}`, 25, yPosition);
+      // Para plano personalizado, mostrar configurações customizadas
+      if (selectedTemplate.id === 'plano-personalizado') {
+        pdf.text(`• Valor Mensal: R$ ${customPlan.monthlyValue.toLocaleString('pt-BR')}`, 25, yPosition);
         yPosition += 6;
-      });
+        pdf.text(`• Franquia: ${customPlan.franchise}`, 25, yPosition);
+        yPosition += 6;
+        pdf.text(`• Nível 1: R$ ${customPlan.nivel1.toFixed(2)}`, 25, yPosition);
+        yPosition += 6;
+        pdf.text(`• Nível 2: R$ ${customPlan.nivel2.toFixed(2)}`, 25, yPosition);
+        yPosition += 6;
+        pdf.text(`• Massivos: R$ ${customPlan.massivos.toFixed(2)}`, 25, yPosition);
+        yPosition += 6;
+        pdf.text(`• Vendas Receptivas: ${customPlan.vendasReceptivas}`, 25, yPosition);
+        yPosition += 6;
+      } else {
+        planData.features.forEach(feature => {
+          pdf.text(`• ${feature}`, 25, yPosition);
+          yPosition += 6;
+        });
+      }
 
       yPosition += 4;
 
       // Franquia
-      if (selectedTemplate.franchise) {
+      if (planData.franchise) {
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'bold');
-        pdf.text(`FRANQUIA INCLUÍDA: ${selectedTemplate.franchise}`, 20, yPosition);
+        pdf.text(`FRANQUIA INCLUÍDA: ${planData.franchise}`, 20, yPosition);
         yPosition += 10;
       }
 
       // Valores adicionais
-      if (selectedTemplate.additionalValues || selectedTemplate.perCall) {
+      if (planData.additionalValues || planData.perCall) {
         pdf.setFontSize(11);
         pdf.setFont('helvetica', 'bold');
         pdf.text('VALORES EXCEDENTES A FRANQUIA:', 20, yPosition);
@@ -276,27 +343,27 @@ export default function MontarPropostaPage() {
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'normal');
 
-        if (selectedTemplate.additionalValues) {
-          pdf.text(`• Nível 1: R$ ${selectedTemplate.additionalValues.nivel1.toFixed(2)}`, 25, yPosition);
+        if (planData.additionalValues) {
+          pdf.text(`• Nível 1: R$ ${planData.additionalValues.nivel1.toFixed(2)}`, 25, yPosition);
           yPosition += 6;
-          pdf.text(`• Nível 2: R$ ${selectedTemplate.additionalValues.nivel2.toFixed(2)}`, 25, yPosition);
+          pdf.text(`• Nível 2: R$ ${planData.additionalValues.nivel2.toFixed(2)}`, 25, yPosition);
           yPosition += 6;
-          pdf.text(`• Massivos: R$ ${selectedTemplate.additionalValues.massivos.toFixed(2)}`, 25, yPosition);
+          pdf.text(`• Massivos: R$ ${planData.additionalValues.massivos.toFixed(2)}`, 25, yPosition);
           yPosition += 6;
-          pdf.text(`• Vendas Receptivas: ${selectedTemplate.additionalValues.vendasReceptivas}`, 25, yPosition);
+          pdf.text(`• Vendas Receptivas: ${planData.additionalValues.vendasReceptivas}`, 25, yPosition);
           yPosition += 8;
         }
 
-        if (selectedTemplate.perCall) {
+        if (planData.perCall) {
           pdf.text('VALORES POR CHAMADO:', 25, yPosition);
           yPosition += 6;
-          pdf.text(`• Nível 1: R$ ${selectedTemplate.perCall.nivel1.toFixed(2)}`, 30, yPosition);
+          pdf.text(`• Nível 1: R$ ${planData.perCall.nivel1.toFixed(2)}`, 30, yPosition);
           yPosition += 6;
-          pdf.text(`• Nível 2: R$ ${selectedTemplate.perCall.nivel2.toFixed(2)}`, 30, yPosition);
+          pdf.text(`• Nível 2: R$ ${planData.perCall.nivel2.toFixed(2)}`, 30, yPosition);
           yPosition += 6;
-          pdf.text(`• Massivos: R$ ${selectedTemplate.perCall.massivos.toFixed(2)}`, 30, yPosition);
+          pdf.text(`• Massivos: R$ ${planData.perCall.massivos.toFixed(2)}`, 30, yPosition);
           yPosition += 6;
-          pdf.text(`• Vendas Receptivas: ${selectedTemplate.perCall.vendasReceptivas}`, 30, yPosition);
+          pdf.text(`• Vendas Receptivas: ${planData.perCall.vendasReceptivas}`, 30, yPosition);
           yPosition += 8;
         }
       }
@@ -328,9 +395,9 @@ export default function MontarPropostaPage() {
       pdf.setTextColor(...darkGray);
       pdf.setFontSize(10);
 
-      if (selectedTemplate.basePrice > 0) {
-        const finalPrice = selectedTemplate.basePrice * (1 - customizations.discount / 100);
-        pdf.text(`Valor mensal: R$ ${selectedTemplate.basePrice.toLocaleString('pt-BR')}`, 20, yPosition);
+      if (planData.basePrice > 0) {
+        const finalPrice = planData.basePrice * (1 - customizations.discount / 100);
+        pdf.text(`Valor mensal: R$ ${planData.basePrice.toLocaleString('pt-BR')}`, 20, yPosition);
         yPosition += 6;
         
         if (customizations.discount > 0) {
@@ -379,7 +446,7 @@ export default function MontarPropostaPage() {
       pdf.text('www.pingdesk.com.br', pageWidth - 60, pageHeight - 8);
 
       // Salvar o PDF
-      const fileName = `Proposta_${clientData.companyName}_${selectedTemplate.name.replace(/\s+/g, '_')}.pdf`;
+      const fileName = `Proposta_${clientData.companyName}_${planData.name.replace(/\s+/g, '_')}.pdf`;
       pdf.save(fileName);
 
       toast.success('Proposta PDF gerada e baixada com sucesso!');
@@ -605,6 +672,102 @@ export default function MontarPropostaPage() {
               </div>
             </div>
 
+            {selectedTemplate?.id === 'plano-personalizado' && (
+              <div className="card">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">⚙️ Configuração do Plano Personalizado</h2>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Fixo Mensal (R$) *
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={customPlan.monthlyValue}
+                        onChange={(e) => setCustomPlan(prev => ({ ...prev, monthlyValue: Number(e.target.value) }))}
+                        className="input"
+                        placeholder="5000"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Franquia *
+                      </label>
+                      <input
+                        type="text"
+                        value={customPlan.franchise}
+                        onChange={(e) => setCustomPlan(prev => ({ ...prev, franchise: e.target.value }))}
+                        className="input"
+                        placeholder="1000 chamados"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="border-t pt-4">
+                    <h3 className="text-sm font-medium text-gray-900 mb-3">Valores Adicionais (Excedente à Franquia)</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Nível 1 (R$)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={customPlan.nivel1}
+                          onChange={(e) => setCustomPlan(prev => ({ ...prev, nivel1: Number(e.target.value) }))}
+                          className="input"
+                          placeholder="3.50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Nível 2 (R$)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={customPlan.nivel2}
+                          onChange={(e) => setCustomPlan(prev => ({ ...prev, nivel2: Number(e.target.value) }))}
+                          className="input"
+                          placeholder="4.50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Massivos (R$)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={customPlan.massivos}
+                          onChange={(e) => setCustomPlan(prev => ({ ...prev, massivos: Number(e.target.value) }))}
+                          className="input"
+                          placeholder="1.50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Vendas Receptivas
+                        </label>
+                        <input
+                          type="text"
+                          value={customPlan.vendasReceptivas}
+                          onChange={(e) => setCustomPlan(prev => ({ ...prev, vendasReceptivas: e.target.value }))}
+                          className="input"
+                          placeholder="50% do plano instalado"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="card">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Gerar Proposta</h2>
               {selectedTemplate ? (
@@ -614,18 +777,31 @@ export default function MontarPropostaPage() {
                     <p className="text-sm text-gray-600">{selectedTemplate.description}</p>
                     <div className="mt-2">
                       <span className="text-lg font-bold text-gray-900">
-                        {selectedTemplate.basePrice > 0 ? (
+                        {selectedTemplate.id === 'plano-personalizado' ? (
+                          customPlan.monthlyValue > 0 ? (
+                            <>R$ {customPlan.monthlyValue.toLocaleString('pt-BR')}/mês</>
+                          ) : (
+                            'Configure os valores'
+                          )
+                        ) : selectedTemplate.basePrice > 0 ? (
                           <>R$ {selectedTemplate.basePrice.toLocaleString('pt-BR')}{selectedTemplate.priceLabel}</>
                         ) : (
                           selectedTemplate.priceLabel
                         )}
                       </span>
-                      {customizations.discount > 0 && selectedTemplate.basePrice > 0 && (
+                      {customizations.discount > 0 && (
+                        selectedTemplate.id === 'plano-personalizado' ? 
+                          customPlan.monthlyValue > 0 : 
+                          selectedTemplate.basePrice > 0
+                      ) && (
                         <span className="ml-2 text-sm text-green-600">
                           (-{customizations.discount}%)
                         </span>
                       )}
                     </div>
+                    {selectedTemplate.id === 'plano-personalizado' && customPlan.franchise && (
+                      <p className="text-sm text-gray-500 mt-1">Franquia: {customPlan.franchise}</p>
+                    )}
                   </div>
                   <button
                     onClick={generateProposal}
