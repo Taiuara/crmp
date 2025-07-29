@@ -45,20 +45,25 @@ export default function AgendaPage() {
       if (user.role === 'admin') {
         meetingsQuery = query(collection(db, 'meetings'), orderBy('date', 'asc'));
       } else {
+        // Removendo orderBy para evitar necessidade de índice composto
         meetingsQuery = query(
           collection(db, 'meetings'),
-          where('sellerId', '==', user.id),
-          orderBy('date', 'asc')
+          where('sellerId', '==', user.id)
         );
       }
 
       const meetingsSnapshot = await getDocs(meetingsQuery);
-      const meetingsData = meetingsSnapshot.docs.map(doc => ({
+      let meetingsData = meetingsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         date: doc.data().date?.toDate() || new Date(),
         createdAt: doc.data().createdAt?.toDate() || new Date(),
       })) as Meeting[];
+
+      // Ordenar no cliente se for vendedor
+      if (user.role !== 'admin') {
+        meetingsData = meetingsData.sort((a, b) => a.date.getTime() - b.date.getTime());
+      }
 
       setMeetings(meetingsData);
 
@@ -67,20 +72,25 @@ export default function AgendaPage() {
       if (user.role === 'admin') {
         proposalsQuery = query(collection(db, 'proposals'), orderBy('createdAt', 'desc'));
       } else {
+        // Removendo orderBy para evitar necessidade de índice composto
         proposalsQuery = query(
           collection(db, 'proposals'),
-          where('sellerId', '==', user.id),
-          orderBy('createdAt', 'desc')
+          where('sellerId', '==', user.id)
         );
       }
 
       const proposalsSnapshot = await getDocs(proposalsQuery);
-      const proposalsData = proposalsSnapshot.docs.map(doc => ({
+      let proposalsData = proposalsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate() || new Date(),
         updatedAt: doc.data().updatedAt?.toDate() || new Date(),
       })) as Proposal[];
+
+      // Ordenar no cliente se for vendedor
+      if (user.role !== 'admin') {
+        proposalsData = proposalsData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      }
 
       setProposals(proposalsData);
     } catch (error) {

@@ -183,159 +183,159 @@ export default function MontarPropostaPage() {
 
       // Título da proposta
       pdf.setTextColor(...primaryColor);
-      pdf.setFontSize(24);
+      pdf.setFontSize(18);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('PROPOSTA COMERCIAL', 20, 50);
+      pdf.text('PROPOSTA COMERCIAL', 20, 45);
 
       // Subtítulo com plano selecionado
       pdf.setTextColor(...secondaryColor);
-      pdf.setFontSize(16);
-      pdf.text(selectedTemplate.name, 20, 65);
+      pdf.setFontSize(14);
+      pdf.text(selectedTemplate.name, 20, 58);
 
-      let yPosition = 80;
+      let yPosition = 70;
 
       // Seção dados do cliente
       pdf.setTextColor(...darkGray);
-      pdf.setFontSize(14);
+      pdf.setFontSize(12);
       pdf.setFont('helvetica', 'bold');
       pdf.text('DADOS DO CLIENTE', 20, yPosition);
       
-      yPosition += 10;
+      yPosition += 8;
       pdf.setDrawColor(...lightGray);
       pdf.line(20, yPosition, pageWidth - 20, yPosition);
-      yPosition += 15;
+      yPosition += 12;
 
-      pdf.setFontSize(11);
+      pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
       pdf.text(`Empresa: ${clientData.companyName}`, 20, yPosition);
-      yPosition += 8;
+      yPosition += 6;
       pdf.text(`Contato: ${clientData.contactName}`, 20, yPosition);
-      yPosition += 8;
+      yPosition += 6;
       if (clientData.email) {
         pdf.text(`E-mail: ${clientData.email}`, 20, yPosition);
-        yPosition += 8;
+        yPosition += 6;
       }
       if (clientData.phone) {
         pdf.text(`Telefone: ${clientData.phone}`, 20, yPosition);
-        yPosition += 8;
+        yPosition += 6;
       }
       if (clientData.address) {
         const addressLines = pdf.splitTextToSize(`Endereço: ${clientData.address}`, pageWidth - 40);
         pdf.text(addressLines, 20, yPosition);
-        yPosition += addressLines.length * 6;
+        yPosition += addressLines.length * 5;
       }
 
-      yPosition += 10;
+      yPosition += 8;
 
       // Características do plano - agora como primeira seção após dados do cliente
       pdf.setTextColor(...darkGray);
-      pdf.setFontSize(14);
+      pdf.setFontSize(12);
       pdf.setFont('helvetica', 'bold');
       pdf.text('CARACTERÍSTICAS', 20, yPosition);
       
-      yPosition += 10;
+      yPosition += 8;
       pdf.line(20, yPosition, pageWidth - 20, yPosition);
-      yPosition += 15;
+      yPosition += 12;
 
       // Nome do plano como subtítulo
       pdf.setTextColor(...secondaryColor);
-      pdf.setFontSize(12);
+      pdf.setFontSize(11);
       pdf.setFont('helvetica', 'bold');
       pdf.text(selectedTemplate.name, 20, yPosition);
-      yPosition += 10;
+      yPosition += 8;
 
       pdf.setTextColor(...darkGray);
-      pdf.setFontSize(10);
+      pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
       const descriptionLines = pdf.splitTextToSize(selectedTemplate.description, pageWidth - 40);
       pdf.text(descriptionLines, 20, yPosition);
-      yPosition += descriptionLines.length * 6 + 8;
+      yPosition += descriptionLines.length * 5 + 6;
 
       selectedTemplate.features.forEach(feature => {
         pdf.text(`• ${feature}`, 25, yPosition);
-        yPosition += 8;
+        yPosition += 6;
       });
 
-      yPosition += 5;
+      yPosition += 4;
 
       // Franquia
       if (selectedTemplate.franchise) {
-        pdf.setFontSize(11);
+        pdf.setFontSize(10);
         pdf.setFont('helvetica', 'bold');
         pdf.text(`FRANQUIA INCLUÍDA: ${selectedTemplate.franchise}`, 20, yPosition);
-        yPosition += 15;
+        yPosition += 10;
       }
 
       // Valores adicionais
       if (selectedTemplate.additionalValues || selectedTemplate.perCall) {
-        pdf.setFontSize(12);
+        pdf.setFontSize(11);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('VALORES:', 20, yPosition);
-        yPosition += 10;
+        pdf.text('VALORES EXCEDENTES A FRANQUIA:', 20, yPosition);
+        yPosition += 8;
 
-        pdf.setFontSize(10);
+        pdf.setFontSize(9);
         pdf.setFont('helvetica', 'normal');
 
         if (selectedTemplate.additionalValues) {
           pdf.text(`• Nível 1: R$ ${selectedTemplate.additionalValues.nivel1.toFixed(2)}`, 25, yPosition);
-          yPosition += 8;
+          yPosition += 6;
           pdf.text(`• Nível 2: R$ ${selectedTemplate.additionalValues.nivel2.toFixed(2)}`, 25, yPosition);
-          yPosition += 8;
+          yPosition += 6;
           pdf.text(`• Massivos: R$ ${selectedTemplate.additionalValues.massivos.toFixed(2)}`, 25, yPosition);
-          yPosition += 8;
+          yPosition += 6;
           pdf.text(`• Vendas Receptivas: ${selectedTemplate.additionalValues.vendasReceptivas}`, 25, yPosition);
-          yPosition += 12;
+          yPosition += 8;
         }
 
         if (selectedTemplate.perCall) {
           pdf.text('VALORES POR CHAMADO:', 25, yPosition);
-          yPosition += 8;
+          yPosition += 6;
           pdf.text(`• Nível 1: R$ ${selectedTemplate.perCall.nivel1.toFixed(2)}`, 30, yPosition);
-          yPosition += 8;
+          yPosition += 6;
           pdf.text(`• Nível 2: R$ ${selectedTemplate.perCall.nivel2.toFixed(2)}`, 30, yPosition);
-          yPosition += 8;
+          yPosition += 6;
           pdf.text(`• Massivos: R$ ${selectedTemplate.perCall.massivos.toFixed(2)}`, 30, yPosition);
-          yPosition += 8;
+          yPosition += 6;
           pdf.text(`• Vendas Receptivas: ${selectedTemplate.perCall.vendasReceptivas}`, 30, yPosition);
-          yPosition += 12;
+          yPosition += 8;
         }
       }
 
       // Recursos adicionais
       if (customizations.additionalFeatures) {
-        pdf.setFontSize(12);
+        pdf.setFontSize(11);
         pdf.setFont('helvetica', 'bold');
         pdf.text('RECURSOS ADICIONAIS:', 20, yPosition);
-        yPosition += 10;
+        yPosition += 8;
 
-        pdf.setFontSize(10);
+        pdf.setFontSize(9);
         pdf.setFont('helvetica', 'normal');
         const additionalLines = pdf.splitTextToSize(customizations.additionalFeatures, pageWidth - 40);
         pdf.text(additionalLines, 20, yPosition);
-        yPosition += additionalLines.length * 6 + 10;
+        yPosition += additionalLines.length * 5 + 8;
       }
 
       // Seção de investimento
       pdf.setFillColor(245, 245, 245);
-      pdf.rect(15, yPosition - 5, pageWidth - 30, 35, 'F');
+      pdf.rect(15, yPosition - 4, pageWidth - 30, 28, 'F');
       
       pdf.setTextColor(...primaryColor);
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('INVESTIMENTO', 20, yPosition + 8);
-
-      yPosition += 20;
-      pdf.setTextColor(...darkGray);
       pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('INVESTIMENTO', 20, yPosition + 6);
+
+      yPosition += 16;
+      pdf.setTextColor(...darkGray);
+      pdf.setFontSize(10);
 
       if (selectedTemplate.basePrice > 0) {
         const finalPrice = selectedTemplate.basePrice * (1 - customizations.discount / 100);
         pdf.text(`Valor mensal: R$ ${selectedTemplate.basePrice.toLocaleString('pt-BR')}`, 20, yPosition);
-        yPosition += 8;
+        yPosition += 6;
         
         if (customizations.discount > 0) {
           pdf.text(`Desconto: ${customizations.discount}%`, 20, yPosition);
-          yPosition += 8;
+          yPosition += 6;
           pdf.setFont('helvetica', 'bold');
           pdf.text(`Valor final: R$ ${finalPrice.toLocaleString('pt-BR')}/mês`, 20, yPosition);
         }
@@ -343,29 +343,29 @@ export default function MontarPropostaPage() {
         pdf.text('Sem mensalidade fixa - Pagamento por chamado', 20, yPosition);
       }
 
-      yPosition += 20;
+      yPosition += 15;
 
       // Observações
       if (customizations.observations) {
         pdf.setTextColor(...darkGray);
-        pdf.setFontSize(12);
+        pdf.setFontSize(11);
         pdf.setFont('helvetica', 'bold');
         pdf.text('OBSERVAÇÕES:', 20, yPosition);
-        yPosition += 10;
+        yPosition += 8;
 
-        pdf.setFontSize(10);
+        pdf.setFontSize(9);
         pdf.setFont('helvetica', 'normal');
         const observationLines = pdf.splitTextToSize(customizations.observations, pageWidth - 40);
         pdf.text(observationLines, 20, yPosition);
-        yPosition += observationLines.length * 6 + 10;
+        yPosition += observationLines.length * 5 + 8;
       }
 
       // Validade
       if (customizations.validUntil) {
         pdf.setTextColor(...lightGray);
-        pdf.setFontSize(10);
+        pdf.setFontSize(9);
         pdf.text(`Proposta válida até: ${new Date(customizations.validUntil).toLocaleDateString('pt-BR')}`, 20, yPosition);
-        yPosition += 10;
+        yPosition += 8;
       }
 
       // Footer
